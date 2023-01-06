@@ -1,0 +1,11 @@
+{
+  "entryPoints": [
+    "index.ts",
+    "src/types.ts",
+    "src/core/index.ts",
+    "src/interfaces/index.ts",
+    "src/utils/index.ts"
+  ],
+  "exclude": ["demo/index.ts"],
+  "out": "../docs/coredocs/docs/webdfu"
+}

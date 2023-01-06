@@ -1,0 +1,63 @@
+{
+  "name": "@trunk-root/webdfu",
+  "version": "0.1.5",
+  "description": "Driver for working with DFU in a browser over Web USB",
+  "type": "module",
+  "module": "dist/index.js",
+  "main": "dist/index.cjs",
+  "exports": {
+    "require": "./dist/index.cjs",
+    "import": "./dist/index.js"
+  },
+  "files": [
+    "dist",
+    "LICENSE",
+    "README.md",
+    "CHANGELOG.md",
+    "package.json",
+    "package-lock.json"
+  ],
+  "scripts": {
+    "build": "rollup -c rollup.config.js",
+    "format": "prettier --check .",
+    "lint": "eslint **/*.ts",
+    "types": "tsc --build tsconfig.json",
+    "test": "run-p types lint format",
+    "clear": "rimraf .cache dist tsconfig.tsbuildinfo"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/Flipper-Zero/webdfu.git"
+  },
+  "keywords": [
+    "dfu",
+    "web",
+    "flipper"
+  ],
+  "author": "Nikolay Govorov <me@govorov.online> (https://govorov.online)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/Flipper-Zero/webdfu/issues"
+  },
+  "homepage": "https://github.com/Flipper-Zero/webdfu#readme",
+  "devDependencies": {
+    "@types/w3c-web-serial": "^1.0.1",
+    "@types/w3c-web-usb": "^1.0.4",
+    "@typescript-eslint/eslint-plugin": "^4.27.0",
+    "@typescript-eslint/parser": "^4.27.0",
+    "eslint": "^7.28.0",
+    "eslint-config-prettier": "^8.3.0",
+    "npm-run-all": "^4.1.5",
+    "prettier": "^2.3.0",
+    "rimraf": "^3.0.2",
+    "rollup": "^2.52.0",
+    "rollup-plugin-terser": "^7.0.2",
+    "rollup-plugin-ts": "^1.4.0",
+    "typedoc": "^0.22.15",
+    "typedoc-plugin-markdown": "^3.12.1",
+    "typescript": "^4.3.2"
+  },
+  "dependencies": {
+    "nanoevents": "^6.0.0"
+  }
+}
