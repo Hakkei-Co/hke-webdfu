@@ -539,13 +539,12 @@ export class WebDFU {
 
 
       if (result.status !== "ok") {
-        throw new WebDFUError(result.status);
+        return Promise.reject(result.status)
       }
 
-      await this.device.reset()
-      return result.bytesWritten;
+      return Promise.resolve(result.bytesWritten);
     } catch (error) {
-      throw new WebDFUError("ControlTransferOut failed: " + error);
+      console.error("ControlTransferOut failed: " + error);
     }
   }
 

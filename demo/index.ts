@@ -1,127 +1,130 @@
-import { WebDFUType, WebDFU } from "../index";
+import { WebDFUType, WebDFU } from '../index'
 
-import { clearLog, logError, logInfo, logProgress, logWarning, setLogContext } from "./log";
+import { clearLog, logError, logInfo, logProgress, logWarning, setLogContext } from './log'
 
 // Utils
-function hex4(n: number) {
-  let s = n.toString(16);
-  console.log("--hex4()", s)
+function hex4 (n: number) {
+  let s = n.toString(16)
+  // console.log("--hex4()", s)
 
   while (s.length < 4) {
-    s = "0" + s;
+    s = '0' + s
   }
 
-  return s;
+  return s
 }
 
-function hexAddr8(n: number) {
-  let s = n.toString(16);
+function hexAddr8 (n: number) {
+  let s = n.toString(16)
   while (s.length < 8) {
-    s = "0" + s;
+    s = '0' + s
   }
-  console.log("--hexAddr8()", s)
-  return "0x" + s;
+  // console.log("--hexAddr8()", s)
+  return '0x' + s
 }
 
-function niceSize(n: number) {
-  console.log("--niceSize()")
-  const gigabyte = 1024 * 1024 * 1024;
-  const megabyte = 1024 * 1024;
-  const kilobyte = 1024;
+function niceSize (n: number) {
+  console.log('--niceSize()')
+  const gigabyte = 1024 * 1024 * 1024
+  const megabyte = 1024 * 1024
+  const kilobyte = 1024
   if (n >= gigabyte) {
-    return n / gigabyte + "GiB";
+    return n / gigabyte + 'GiB'
   } else if (n >= megabyte) {
-    return n / megabyte + "MiB";
+    return n / megabyte + 'MiB'
   } else if (n >= kilobyte) {
-    return n / kilobyte + "KiB";
+    return n / kilobyte + 'KiB'
   } else {
-    return n + "B";
+    return n + 'B'
   }
 }
 
-function formatDFUSummary(device: WebDFU) {
-  console.log("--formatDFUSummary()")
-  const vid = hex4(device.device.vendorId);
-  const pid = hex4(device.device.productId);
-  const name = device.device.productName;
+function formatDFUSummary (device: WebDFU) {
+  console.log('--formatDFUSummary()')
+  const vid = hex4(device.device.vendorId)
+  const pid = hex4(device.device.productId)
+  const name = device.device.productName
 
-  let mode = "Unknown";
+  let mode = 'Unknown'
   if (device.currentInterfaceSettings?.alternate.interfaceProtocol == 0x01) {
-    mode = "Runtime";
+    mode = 'Runtime'
   } else if (device.currentInterfaceSettings?.alternate.interfaceProtocol == 0x02) {
-    mode = "DFU";
+    mode = 'DFU'
   }
 
-  const cfg = device.currentInterfaceSettings?.configuration.configurationValue;
-  const intf = device.currentInterfaceSettings?.["interface"].interfaceNumber;
-  const alt = device.currentInterfaceSettings?.alternate.alternateSetting;
-  const serial = device.device.serialNumber;
+  const cfg = device.currentInterfaceSettings?.configuration.configurationValue
+  const intf = device.currentInterfaceSettings?.['interface'].interfaceNumber
+  const alt = device.currentInterfaceSettings?.alternate.alternateSetting
+  const serial = device.device.serialNumber
 
-  return `${mode}: [${vid}:${pid}] cfg=${cfg}, intf=${intf}, alt=${alt}, name="${name}" serial="${serial}"`;
+  return `${mode}: [${vid}:${pid}] cfg=${cfg}, intf=${intf}, alt=${alt}, name="${name}" serial="${serial}"`
 }
 
 // Current page
-let webdfu: WebDFU | null = null;
+let webdfu: WebDFU | null = null
 
-const connectButton = document.querySelector("#connect") as unknown as HTMLButtonElement;
-const detachButton = document.querySelector("#detach") as unknown as HTMLButtonElement;
-const downloadButton = document.querySelector("#download") as unknown as HTMLButtonElement;
-const uploadButton = document.querySelector("#upload") as unknown as HTMLButtonElement;
-const statusDisplay = document.querySelector("#status") as unknown as HTMLDivElement;
-const infoDisplay = document.querySelector("#usbInfo") as unknown as HTMLDivElement;
-const dfuDisplay = document.querySelector("#dfuInfo") as unknown as HTMLDivElement;
+const connectButton = document.querySelector('#connect') as unknown as HTMLButtonElement
+const detachButton = document.querySelector('#detach') as unknown as HTMLButtonElement
+const downloadButton = document.querySelector('#download') as unknown as HTMLButtonElement
+const statusDisplay = document.querySelector('#status') as unknown as HTMLDivElement
+const infoDisplay = document.querySelector('#usbInfo') as unknown as HTMLDivElement
+const dfuDisplay = document.querySelector('#dfuInfo') as unknown as HTMLDivElement
 
-const configForm = document.querySelector("#configForm") as unknown as HTMLFormElement;
+const configForm = document.querySelector('#configForm') as unknown as HTMLFormElement
 
-const transferSizeField = document.querySelector("#transferSize") as unknown as HTMLInputElement;
-let transferSize = parseInt(transferSizeField.value);
+const transferSizeField = document.querySelector('#transferSize') as unknown as HTMLInputElement
+let transferSize = parseInt(transferSizeField.value)
 
-const dfuseStartAddressField = document.querySelector("#dfuseStartAddress") as unknown as HTMLInputElement;
-const dfuseUploadSizeField = document.querySelector("#dfuseUploadSize") as unknown as HTMLInputElement;
+// const dfuseStartAddressField = document.querySelector("#dfuseStartAddress") as unknown as HTMLInputElement;
+// const dfuseUploadSizeField = document.querySelector("#dfuseUploadSize") as unknown as HTMLInputElement;
 
-const firmwareFileField = document.querySelector("#firmwareFile") as unknown as HTMLInputElement;
-let firmwareFile: ArrayBuffer | null = null;
+const firmwareFileField = document.querySelector('#firmwareFile') as unknown as HTMLInputElement
+let firmwareFile: ArrayBuffer | null = null
 
-const downloadLog = document.querySelector("#downloadLog") as unknown as HTMLDivElement;
-const uploadLog = document.querySelector("#uploadLog") as unknown as HTMLDivElement;
+const downloadLog = document.querySelector('#downloadLog') as unknown as HTMLDivElement
+const uploadLog = document.querySelector('#uploadLog') as unknown as HTMLDivElement
 
-let manifestationTolerant = true;
+let manifestationTolerant = true
+let detached = false
 
-function onDisconnect(reason?: Error) {
+function onDisconnect (reason?: Error) {
   if (reason) {
-    statusDisplay.textContent = reason.message;
+    statusDisplay.textContent = reason.message
   }
 
-  connectButton.textContent = "Connect";
-  infoDisplay.textContent = "";
-  dfuDisplay.textContent = "";
-  uploadButton.disabled = false;
-  detachButton.disabled = false
-  downloadButton.disabled = true;
-  firmwareFileField.disabled = true;
+  connectButton.textContent = detached ? 'Connect DFU' : 'Connect'
+  infoDisplay.textContent = ''
+  dfuDisplay.textContent = ''
+  detachButton.disabled = true
+  downloadButton.disabled = true
+  firmwareFileField.disabled = true
 }
 
-function onUnexpectedDisconnect(event: USBConnectionEvent) {
-  console.log("--onUnexpectedDisconnect")
+// NOTE: This is triggered on detach
+function onUnexpectedDisconnect (event: USBConnectionEvent) {
+  console.log('--onUnexpectedDisconnect')
   if (webdfu?.device) {
     if (webdfu?.device === event.device) {
-      onDisconnect(new Error("Device disconnected"));
-      webdfu = null;
+      onDisconnect(new Error('Device disconnected'))
+      webdfu = null
     }
+    connectButton.className = 'btn btn-primary'
+    detachButton.className = 'btn btn-outline-success';
+    connectButton.textContent = 'Reconnect in DFU Mode'
   }
 }
 
-async function connect(interfaceIndex: number) {
-  console.log("--connect")
+async function connect (interfaceIndex: number) {
+  console.log('--connect')
   if (!webdfu) {
-    throw new Error();
+    throw new Error()
   }
 
-  await webdfu.connect(interfaceIndex);
+  await webdfu.connect(interfaceIndex)
 
-  let memorySummary = "";
+  const memorySummary = ''
   if (webdfu.properties) {
-    const desc = webdfu.properties;
+    const desc = webdfu.properties
 
     const info = [
       `WillDetach=${webdfu.properties.WillDetach}`,
@@ -130,264 +133,285 @@ async function connect(interfaceIndex: number) {
       `CanDownload=${webdfu.properties.CanDownload}`,
       `TransferSize=${webdfu.properties.TransferSize}`,
       `DetachTimeOut=${webdfu.properties.DetachTimeOut}`,
-      `Version=${hex4(webdfu.properties.DFUVersion)}`,
-    ];
-    console.log('%c info ⏰ ', 'background:#6e6e6e; color: #cdfdce;, ⚛︎ connect ⚛︎ info', info);
+      `Version=${hex4(webdfu.properties.DFUVersion)}`
+    ]
+    console.log('%c info ⏰ ', 'background:#6e6e6e; color: #cdfdce;, ⚛︎ connect ⚛︎ info', info)
 
-
-    dfuDisplay.textContent += "\n" + info.join(", ");
-    transferSizeField.value = webdfu.properties.TransferSize.toString();
-    transferSize = webdfu.properties.TransferSize;
-    console.log('%c transferSize ⏰ ', 'background:#6e6e6e; color: #cdfdce;, ⚛︎ connect ⚛︎ transferSize', transferSize);
+    dfuDisplay.textContent += '\n' + info.join(', ')
+    transferSizeField.value = webdfu.properties.TransferSize.toString()
+    transferSize = webdfu.properties.TransferSize
+    console.log('%c transferSize ⏰ ', 'background:#6e6e6e; color: #cdfdce;, ⚛︎ connect ⚛︎ transferSize', transferSize)
 
     if (webdfu.properties.CanDownload) {
-      manifestationTolerant = webdfu.properties.ManifestationTolerant;
+      manifestationTolerant = webdfu.properties.ManifestationTolerant
+      firmwareFileField.disabled = true
     }
-
+    // Device is in run-time mode
     if (webdfu.currentInterfaceSettings?.alternate.interfaceProtocol == 0x02) {
       if (!desc.CanUpload) {
-        uploadButton.disabled = false;
-        // dfuseUploadSizeField.disabled = true;
+        firmwareFileField.disabled = true
       }
 
       if (!desc.CanDownload) {
-        downloadButton.disabled = true;
+        downloadButton.disabled = true
       }
     }
-
-
-    if (webdfu.type === WebDFUType.SDFUse) {
-      if (webdfu.dfuseMemoryInfo) {
-        let totalSize = 0;
-        for (const segment of webdfu.dfuseMemoryInfo.segments) {
-          totalSize += segment.end - segment.start;
-        }
-        memorySummary = `Selected memory region: ${webdfu.dfuseMemoryInfo.name} (${niceSize(totalSize)})`;
-        for (const segment of webdfu.dfuseMemoryInfo.segments) {
-          const properties = [];
-          if (segment.readable) {
-            properties.push("readable");
-          }
-          if (segment.erasable) {
-            properties.push("erasable");
-          }
-          if (segment.writable) {
-            properties.push("writable");
-          }
-          let propertySummary = properties.join(", ");
-          if (!propertySummary) {
-            propertySummary = "inaccessible";
-          }
-
-          memorySummary += `\n${hexAddr8(segment.start)}-${hexAddr8(segment.end - 1)} (${propertySummary})`;
-        }
-      }
-    }
-
   }
 
   // Clear logs
-  clearLog(uploadLog);
-  clearLog(downloadLog);
+  clearLog(uploadLog)
+  clearLog(downloadLog)
 
   // Display basic USB information
-  statusDisplay.textContent = "";
-  connectButton.textContent = "Disconnect";
+  statusDisplay.textContent = ''
+  connectButton.textContent = 'Disconnect'
+  connectButton.className = 'btn btn-danger';
+
   infoDisplay.textContent =
     `Name: ${webdfu.device.productName}\n` +
     `MFG: ${webdfu.device.manufacturerName}\n` +
-    `Serial: ${webdfu.device.serialNumber}\n`;
+    `Serial: ${webdfu.device.serialNumber}\n`
 
   // Display basic dfu-util style info
   if (webdfu) {
-    dfuDisplay.textContent = formatDFUSummary(webdfu) + "\n" + memorySummary;
+    dfuDisplay.textContent = formatDFUSummary(webdfu) + '\n' + memorySummary
   } else {
-    dfuDisplay.textContent = "Not found";
+    dfuDisplay.textContent = 'Not found'
   }
 
   // Update buttons based on capabilities
   if (webdfu.currentInterfaceSettings?.alternate.interfaceProtocol == 0x01) {
     // Runtime
-    uploadButton.disabled = false;
-    downloadButton.disabled = true;
-    detachButton.disabled = false;
-    firmwareFileField.disabled = true;
+
+    detachButton.disabled = false
+    detachButton.className = 'btn btn-success'
+    downloadButton.disabled = true
+    firmwareFileField.disabled = true
+
   } else {
     // DFU
-    uploadButton.disabled = false;
-    downloadButton.disabled = false;
-    firmwareFileField.disabled = false;
+    detached = true;
+    detachButton.disabled = true
+    detachButton.className = 'btn btn-outline-success'
+
+    downloadButton.disabled = true
+    firmwareFileField.disabled = false
   }
 }
 
-transferSizeField.addEventListener("change", () => {
-  transferSize = parseInt(transferSizeField.value);
-});
+transferSizeField.addEventListener('change', () => {
+  transferSize = parseInt(transferSizeField.value)
+})
 
-detachButton.addEventListener("click", async function () {
-  console.log('--detachButton-click()')
-  try {
-    const res = await webdfu.detach()
-    console.log('%c NOTICE ⏰ ', 'background:#6e6e6e; color: #cdfdce;, ⚛︎ res', res);
-  } catch(e) {
-    console.error(e)
-  }
-
-});
-
-connectButton.addEventListener("click", async function () {
-  console.log("--connectButton-click()")
+detachButton.addEventListener('click', async function (el) {
   if (webdfu) {
-    webdfu.close().catch(console.error);
-    webdfu = null;
+    webdfu.detach().then(
+      async len => {
+        console.log('reset passed')
+        console.log('sending a second detach')
+        await webdfu.detach().then(async res => {
+          try {
+            await webdfu.device.close()
+            await webdfu.waitDisconnected(5000)
+            detached = true
+          } catch (err) {
+            console.log('Detach failed: ' + err)
+          }
+        })
 
-    return;
+        onDisconnect()
+        webdfu = null
+        if (detached) {
+          // Wait a few seconds and try reconnecting
+          // setTimeout(, 5000)
+          detachButton.style.visibility = 'hidden';
+        }
+        connectButton.textContent = 'Connect DFU';
+      },
+      async error => {
+        await webdfu.device.close()
+        onDisconnect(error)
+        webdfu = null
+      }
+    )
+  }
+})
+
+connectButton.addEventListener('click', async function () {
+  if (webdfu) {
+    webdfu.close().catch(console.error)
+    webdfu = null
+
+    return
   }
 
   navigator.usb
-    .requestDevice({ filters: [] })
-    .then(async (selectedDevice) => {
+    .requestDevice({
+      filters: [
+        {
+          // Runtime
+          productId: 0x615e,
+          vendorId: 0x1d50 // 0xEF
+        },
+        {
+          // DFU
+          productId: 0xffff,
+          vendorId: 0x1d50
+        }
+      ]
+    })
+    .then(async selectedDevice => {
       webdfu = new WebDFU(
         selectedDevice,
         {
-          forceInterfacesName: true,
+          forceInterfacesName: true
         },
         {
           info: logInfo,
           warning: logWarning,
-          progress: logProgress,
+          progress: logProgress
         }
-      );
-      webdfu.events.on("disconnect", onDisconnect);
+      )
+      webdfu.events.on('disconnect', onDisconnect)
+      console.log('%c device ⏰ ', 'background:#1CBF73; color: #cdfdce;, ⚛︎ .then ⚛︎ webdfu', webdfu.device)
 
-
-      await webdfu.init();
-      console.log('%c initialized webdfu instance ⏰ ', 'background:#6e6e6e; color: #cdfdce;, ⚛︎ .then ⚛︎ webdfu', webdfu);
+      await webdfu.init()
+      console.log(
+        '%c initialized webdfu instance ⏰ ',
+        'background:#6e6e6e; color: #cdfdce;, ⚛︎ .then ⚛︎ webdfu',
+        webdfu.interfaces
+      )
 
       if (webdfu.interfaces.length == 0) {
-        console.log('%c interfaces ⏰ ', 'background:#6e6e6e; color: #cdfdce;, ⚛︎ .then ⚛︎ webdfu.interfaces', webdfu.interfaces);
-        statusDisplay.textContent = "The selected device does not have any USB DFU interfaces.";
-        return;
+        console.log(
+          '%c interfaces ⏰ ',
+          'background:#6e6e6e; color: #cdfdce;, ⚛︎ .then ⚛︎ webdfu.interfaces',
+          webdfu.interfaces
+        )
+        statusDisplay.textContent = 'The selected device does not have any USB DFU interfaces.'
+        return
+      } else if (webdfu.interfaces.length == 1) {
+        await connect(0)
+      } else {
+        console.log('at 2')
+        await connect(0)
       }
-
-      await connect(0);
     })
-    .catch((error) => {
-      console.log(error);
-      statusDisplay.textContent = error;
-    });
+    .catch(error => {
+      console.log(error)
+      statusDisplay.textContent = error
+    })
+})
 
-});
-
-firmwareFileField.addEventListener("change", function () {
-  console.log("--firmwareFileField-change()")
-  firmwareFile = null;
+firmwareFileField.addEventListener('change', function () {
+  console.log('--firmwareFileField-change()')
+  firmwareFile = null
   if ((firmwareFileField?.files ?? []).length > 0) {
-    const file = firmwareFileField.files?.[0] as Blob;
-    const reader = new FileReader();
+    const file = firmwareFileField.files?.[0] as Blob
+    const reader = new FileReader()
     reader.onload = function () {
       if (reader.result instanceof ArrayBuffer) {
-        firmwareFile = reader.result;
+        firmwareFile = reader.result
       }
-    };
-    reader.readAsArrayBuffer(file);
+    }
+    reader.readAsArrayBuffer(file)
   }
-});
+})
 
-async function download(): Promise<void> {
-  console.log("--download()")
+async function download (): Promise<void> {
+  console.log('--download()')
   if (!configForm.checkValidity()) {
-    configForm.reportValidity();
-    return;
+    configForm.reportValidity()
+    return
   }
 
   if (webdfu && firmwareFile != null) {
-    setLogContext(downloadLog);
-    clearLog(downloadLog);
+    setLogContext(downloadLog)
+    clearLog(downloadLog)
 
     try {
       if (await webdfu.isError()) {
-        await webdfu.clearStatus();
+        await webdfu.clearStatus()
       }
     } catch (error) {
-      logWarning("Failed to clear status");
+      logWarning('Failed to clear status')
     }
 
-    const process = webdfu.write(transferSize, firmwareFile, manifestationTolerant);
+    const process = webdfu.write(transferSize, firmwareFile, manifestationTolerant)
 
     // Erase
-    process.events.on("erase/start", () => {
-      console.log("erase/start!");
-      logInfo("Erasing DFU device memory");
-    });
+    process.events.on('erase/start', () => {
+      console.log('erase/start!')
+      logInfo('Erasing DFU device memory')
+    })
 
-    process.events.on("erase/process", (bytesSent, expectedSize) => {
-      logProgress(bytesSent, expectedSize);
-    });
+    process.events.on('erase/process', (bytesSent, expectedSize) => {
+      logProgress(bytesSent, expectedSize)
+    })
 
-    process.events.on("erase/end", () => {
-      logInfo("Success erased");
-    });
+    process.events.on('erase/end', () => {
+      logInfo('Success erased')
+    })
 
     // Write firmware
-    process.events.on("write/start", () => {
-      logInfo("Copying data from browser to DFU device");
-    });
+    process.events.on('write/start', () => {
+      logInfo('Copying data from browser to DFU device')
+    })
 
-    process.events.on("write/process", (bytesSent, expectedSize) => {
-      logProgress(bytesSent, expectedSize);
-    });
+    process.events.on('write/process', (bytesSent, expectedSize) => {
+      logProgress(bytesSent, expectedSize)
+    })
 
-    process.events.on("write/end", (bytes_sent: number) => {
-      logInfo(`Wrote ${bytes_sent} bytes`);
-      logInfo("Manifesting new firmware");
+    process.events.on('write/end', (bytes_sent: number) => {
+      logInfo(`Wrote ${bytes_sent} bytes`)
+      logInfo('Manifesting new firmware')
 
       webdfu
         ?.getStatus()
-        .then((status) => {
-          logInfo(`Final DFU status: state=${status.state}, status=${status.status}`);
+        .then(status => {
+          logInfo(`Final DFU status: state=${status.state}, status=${status.status}`)
         })
-        .catch((error) => {
-          logError(error);
-        });
-    });
+        .catch(error => {
+          logError(error)
+        })
+    })
 
-    process.events.on("error", (error) => {
-      logError(error);
-      setLogContext(null);
-    });
+    process.events.on('error', error => {
+      logError(error)
+      setLogContext(null)
+    })
 
-    process.events.on("end", () => {
-      logInfo("Done!");
-      setLogContext(null);
+    process.events.on('end', () => {
+      logInfo('Done!')
+      setLogContext(null)
 
       if (!manifestationTolerant) {
         webdfu
           ?.waitDisconnected(5000)
           .then(() => {
-            onDisconnect();
-            webdfu = null;
+            onDisconnect()
+            webdfu = null
           })
           .catch(() => {
             // It didn't reset and disconnect for some reason...
-            console.error("Device unexpectedly tolerated manifestation.");
-          });
+            console.error('Device unexpectedly tolerated manifestation.')
+          })
       }
-    });
+    })
   }
 }
 
-downloadButton.addEventListener("click", async function (event) {
-  console.log("--downloadButton-click()")
-  event.preventDefault();
-  event.stopPropagation();
+downloadButton.addEventListener('click', async function (event) {
+  console.log('--downloadButton-click()')
+  event.preventDefault()
+  event.stopPropagation()
 
-  download().catch(console.error);
-});
+  download().catch(console.error)
+})
 
-if (typeof navigator.usb === "undefined") {
-  statusDisplay.textContent = "WebUSB not available.";
-  connectButton.disabled = true;
+if (typeof navigator.usb === 'undefined') {
+  statusDisplay.textContent = 'WebUSB not available.'
+  connectButton.disabled = true
 } else {
-  navigator.usb.addEventListener("disconnect", onUnexpectedDisconnect);
+  navigator.usb.addEventListener('disconnect', onUnexpectedDisconnect)
 }

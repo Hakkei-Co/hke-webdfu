@@ -1,65 +1,42 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <title>WebDFU demo</title>
-  </head>
 
-  <body>
-    <p id="status"></p>
+<head>
+  <title>WebDFU demo</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.0.2/dist/css/bootstrap.min.css" rel="stylesheet"
+    integrity="sha384-EVSTQN3/azprG1Anm3QDgpJLIm9Nao0Yz1ztcQTwFspd3yD65VohhpuuCOmLASjC" crossorigin="anonymous">
+</head>
 
-    <p>
-      <button id="connect">Connect</button>
-      <button id="detach" disabled="true">Detach DFU</button>
-    </p>
+<body>
+  <p id="status"></p>
+  <div class="d-grid gap-2 col-6 mx-auto">
+    <button id="connect" class="btn btn-primary" type="button">Connect</button>
+    <button id="detach" disabled class="btn btn-outline-success" type="button">DFU Mode</button>
+  </div>
+  </p>
 
-    <div>
-      <p id="usbInfo"></p>
-      <p id="dfuInfo"></p>
-    </div>
+  <div class="container-fluid">
+    <p id="usbInfo"></p>
+    <p id="dfuInfo"></p>
+  </div>
 
-    <form id="configForm">
-      <label for="transferSize">Transfer Size:</label>
-      <input type="number" name="transferSize" id="transferSize" value="1024" />
+  <form id="configForm">
+    <label for="transferSize">Transfer Size:</label>
+    <input type="number" name="transferSize" id="transferSize" value="1024" />
+    <fieldset>
+      <legend>Firmware Download (write to USB device)</legend>
+      <p>
+        <input type="file" id="firmwareFile" name="file" disabled />
+      </p>
+      <p>
+        <button id="download" disabled>Download</button>
+      </p>
 
-      <!-- <div id="dfuseFields" hidden>
-        <label for="dfuseStartAddress">DfuSe Start Address:</label>
-        <input
-          type="text"
-          name="dfuseStartAddress"
-          id="dfuseStartAddress"
-          title="Initial memory address to read/write from (hex)"
-          size="10"
-          pattern="0x[A-Fa-f0-9]+"
-        />
-        <label for="dfuseUploadSize">DfuSe Upload Size:</label>
-        <input type="number" name="dfuseUploadSize" id="dfuseUploadSize" min="1" />
-      </div> -->
+      <div class="log" id="downloadLog"></div>
+    </fieldset>
+  </form>
 
-      <fieldset>
-        <legend>Firmware Download (write to USB device)</legend>
+  <script type="module" src="index.ts"></script>
+</body>
 
-        <p>
-          <input type="file" id="firmwareFile" name="file" disabled />
-        </p>
-
-        <p>
-          <button id="download" disabled>Download</button>
-        </p>
-
-        <div class="log" id="downloadLog"></div>
-      </fieldset>
-
-      <fieldset>
-        <legend>Firmware Upload (read from USB device)</legend>
-
-        <p>
-          <button id="upload" disabled>Upload</button>
-        </p>
-
-        <div class="log" id="uploadLog"></div>
-      </fieldset>
-    </form>
-
-    <script type="module" src="index.ts"></script>
-  </body>
 </html>
