@@ -166,6 +166,7 @@ async function connect (interfaceIndex: number) {
   statusDisplay.textContent = ''
   connectButton.textContent = 'Disconnect'
   connectButton.className = 'btn btn-danger';
+  downloadButton.disabled = true
 
   infoDisplay.textContent =
     `Name: ${webdfu.device.productName}\n` +
@@ -315,6 +316,7 @@ firmwareFileField.addEventListener('change', function () {
       }
     }
     reader.readAsArrayBuffer(file)
+    downloadButton.disabled = false;
   }
 })
 
@@ -383,6 +385,7 @@ async function download (): Promise<void> {
 
     process.events.on('end', () => {
       logInfo('Done!')
+      connectButton.className = 'Connect';
       setLogContext(null)
 
       if (!manifestationTolerant) {
