@@ -1,76 +1,91 @@
 # WebDFU
 
+References
+- https://github.com/Flipper-Zero/webdfu/ (2021)
+- https://github.com/devanlai/webdfu (2017)
+
 [![NPM package](https://img.shields.io/npm/v/dfu)](https://www.npmjs.com/package/dfu)
 [![CI in main branch](https://github.com/Flipper-Zero/webdfu/actions/workflows/main.yml/badge.svg)](https://github.com/Flipper-Zero/webdfu/actions/workflows/main.yml)
 
 - Reading and writing the current device firmware by [DFU 1.1](https://www.usb.org/sites/default/files/DFU_1.1.pdf)
-- [ST DfuSe](http://dfu-util.sourceforge.net/dfuse.html) download and upload firmware
 - Switching from the runtime configuration to the DFU bootloader (DFU detach)
 
 ## Install
 
 ```shell
-npm i dfu
+npm i @hakkei/webdfu
 ```
 
 ## Usage
 
-Full example in: [webdfu/demo](https://github.com/Flipper-Zero/webdfu/tree/main/demo)
+Full example in: [webdfu/demo](https://github.com/hakkei-co/hke-webdfu/tree/main/demo)
 
-Basic example:
+Demo: https://dfu.hakkei.wiki
 
-```javascript
-import { WebDFU } from "dfu";
 
-async function connect() {
-  console.log("called connect()");
-  // Load the device by WebUSB
-  const selectedDevice = await navigator.usb.requestDevice({ filters: [] });
+# WebDFU
 
-  // Create and init the WebDFU instance
-  const webdfu = new WebDFU(selectedDevice, { forceInterfacesName: true });
-  await webdfu.init();
+## Properties
 
-  if (webdfu.interfaces.length == 0) {
-    throw new Error("The selected device does not have any USB DFU interfaces.");
-  }
-  console.log("called webdfu()");
-  // Connect to first device interface
-  await webdfu.connect(0);
+- `events`: An instance of `NanoEvents` that can be used to listen for different events, such as `init`, `connect`, and `disconnect`.
+- `interfaces`: An array of `WebDFUSettings` objects representing the DFU interfaces present on the device.
+- `properties`: An object containing the properties of the DFU functional descriptor, if present.
+- `connected`: A boolean indicating whether the class is currently connected to a device.
+- `currentInterfaceSettings`: The settings of the currently selected DFU interface.
 
-  console.log({
-    Version: webdfu.properties.DFUVersion.toString(16),
-    CanUpload: webdfu.properties.CanUpload,
-    CanDownload: webdfu.properties.CanDownload,
-    TransferSize: webdfu.properties.TransferSize,
-    DetachTimeOut: webdfu.properties.DetachTimeOut,
-  });
+## Methods
 
-  // Read firmware from device
-  try {
-    const firmwareFile = await webdfu.read();
-    console.log("Read: ", firmwareFile);
-  } catch (error: e as Exception) {
-    const result = (<Exception>e).Message;
-    console.error(error.message);
-  }
+### `constructor(device: USBDevice, settings?: WebDFUOptions, log?: WebDFULog)`
 
-  // Write firmware in device
-  try {
-    // Your firmware in binary mode
-    const firmwareFile = new ArrayBuffer("");
-    await webdfu.write(1024, firmwareFile);
+Creates a new instance of the `WebDFU` class.
 
-    console.log("Written!");
-  } catch (error) {
-    console.error(error);
-  }
-}
+### `get type(): number`
 
-/*
-  The browser's security policy requires that WebUSB be accessed only by an explicit user action.
-  Add the button in your html and run the WebDFu after click in button.
-  In HTML: <button id="connect-button">Connect</button>
-*/
-document.getElementById("connect-button").addEventListener("click", connect);
-```
+Returns the type of DFU interface, either `WebDFUType.DFU` or `WebDFUType.SDFUse`
+
+### `async init(): Promise<void>`
+
+Initializes the class by finding the DFU interfaces present on the device.
+
+### `async connect(interfaceIndex: number): Promise<void>`
+
+Connects to the specified DFU interface on the device. Throws an error if the interface is not found or if there is an error connecting.
+
+### `async close(): Promise<void>`
+
+Closes the connection to the device and emits a `disconnect` event.
+
+### `read(xferSize: number, maxSize: number): WebDFUProcessRead`
+
+Reads data from the device with a specified transfer size and maximum size. Returns a `WebDFUProcessRead` object that can be used to listen for events such as `end` and `error`.
+
+### `write(xfer_size: number, data: ArrayBuffer, manifestationTolerant: boolean): WebDFUProcessWrite`
+
+Writes data to the device with a specified transfer size and a boolean indicating whether the write should be manifestation tolerant. Returns a `WebDFUProcessWrite` object that can be used to listen for events such as `end` and `error`.
+
+### `private async getDFUDescriptorProperties(): Promise<WebDFUProperties | null>`
+
+Attempts to read the DFU functional descriptor from the device. Returns an object containing the properties of the descriptor, or `null` if the descriptor is not present.
+
+### `private async findDfuInterfaces(): Promise<WebDFUSettings[]>`
+
+Searches for DFU interfaces on the device and returns an array of `WebDFUSettings` objects.
+
+### `private async fixInterfaceNames(interfaces: WebDFUSettings[]): Promise<void>`
+
+Forces the interface names of the device if specified by the settings.
+
+### `private async readStringDescriptor(index: number, langID = 0)`
+
+Reads the string descriptor with the specified index and language ID from the device. Returns the descriptor as an array of 16-bit words if langID is 0, otherwise returns the descriptor as a string.
+
+### `private async readDeviceDescriptor(): Promise<DataView>`
+
+Reads the device descriptor from the device. Returns a DataView object.
+
+### `private async readInterfaceNames()`
+
+Reads the interface names from the device and returns an object that maps the interface index to the corresponding interface name.
+
+
+

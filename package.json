@@ -1,6 +1,6 @@
 {
-  "name": "@trunk-root/webdfu",
-  "version": "0.1.5",
+  "name": "@hakkei/webdfu",
+  "version": "0.1.2",
   "description": "Driver for working with DFU in a browser over Web USB",
   "type": "module",
   "module": "dist/index.js",
@@ -27,19 +27,19 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Flipper-Zero/webdfu.git"
+    "url": "git+https://github.com/hakkei-co/hke-webdfu.git"
   },
   "keywords": [
     "dfu",
     "web",
-    "flipper"
+    "hakkei"
   ],
-  "author": "Nikolay Govorov <me@govorov.online> (https://govorov.online)",
+  "author": "Hakkei Inc. <support@hakkei.net> (https://hakkei.co)",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/Flipper-Zero/webdfu/issues"
+    "url": "https://github.com/hakkei-co/hke-webdfu/issues"
   },
-  "homepage": "https://github.com/Flipper-Zero/webdfu#readme",
+  "homepage": "https://github.com/hakkei-co/webdfu#readme",
   "devDependencies": {
     "@types/w3c-web-serial": "^1.0.1",
     "@types/w3c-web-usb": "^1.0.4",
