@@ -1,4 +1,4 @@
-import { WebDFUError } from "../core/WebDFUError";
+// import { WebDFUError } from "../core/WebDFUError";
 import { DFUseMemorySegment, WebDFUConfigurationDescriptor, WebDFUDeviceDescriptor, WebDFUFunctionalDescriptor, WebDFUInterfaceDescriptor, WebDFUInterfaceSubDescriptor } from "../types";
 
 // Parse descriptors

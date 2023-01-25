@@ -1,4 +1,4 @@
-import { WebDFUType, WebDFU } from '../index'
+import { WebDFUType, WebDFU } from '@hakkei/webdfu'
 
 import { clearLog, logError, logInfo, logProgress, logWarning, setLogContext } from './log'
 

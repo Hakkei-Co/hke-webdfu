@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion */
 /* eslint-disable @typescript-eslint/no-inferrable-types */
 import { createNanoEvents } from 'nanoevents'
-import { WebDFUError, WebDFUProcessWrite, WebDFUProcessRead, WebDFUProcessErase } from './src/core'
+import { WebDFUError, WebDFUProcessWrite, WebDFUProcessRead/*, WebDFUProcessErase*/ } from './src/core'
 
 import {
   WebDFUSettings,
@@ -13,9 +13,9 @@ import {
   WebDFULog,
   WebDFUInterfaceSubDescriptor,
   WebDFUInterfaceDescriptor,
-  DFUseMemorySegment,
+  // DFUseMemorySegment,
 } from './src/types'
-import { parseConfigurationDescriptor, parseMemoryDescriptor } from './src/utils'
+import { parseConfigurationDescriptor/*, parseMemoryDescriptor*/ } from './src/utils'
 export const dfuCommands = {
   DETACH: 0x00,
   DOWNLOAD: 0x01,
